@@ -1,10 +1,12 @@
 'use strict';
 require('dotenv').config();
 const express = require('express');
-const myDB = require('./connection');
-const fccTesting = require('./freeCodeCamp/fcctesting.js');
 const session = require('express-session');
 const passport = require('passport');
+const ObjectID = require('mongodb').ObjectID;
+
+const myDB = require('./connection');
+const fccTesting = require('./freeCodeCamp/fcctesting.js');
 
 const app = express();
 
@@ -29,6 +31,16 @@ app.route('/').get((req, res) => {
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+passport.serializeUser((user, done) => {
+  done(null, user._id);
+});
+
+passport.deserializeUser((id, done) => {
+  //myDataBase.findOne({ _id: new ObjectID(id) }, (err, doc) => {
+    done(null, null);
+  //});
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
