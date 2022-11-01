@@ -6,6 +6,7 @@ const fccTesting = require('./freeCodeCamp/fcctesting.js');
 const session = require('express-session');
 const passport = require('passport');
 const ObjectID = require('mongodb').ObjectID;
+const LocalStrategy = require('passport-local');
 
 const app = express();
 app.set('view engine', 'pug');
@@ -33,20 +34,41 @@ myDB(async (client) => {
     // Change the response to render the Pug template
     res.render('pug', {
       title: 'Connected to Database',
-      message: 'Please login'
+      message: 'Please login',
+      showLogin: true
     });
   });
 
+  app.route('/login').post(passport.authenticate('local', { failureRedirect: '/' }), (req, res) => {
+    res.redirect('/profile');
+  });
+
+  app.route('/profile').get((req, res) => {
+    res.render(process.cwd() + '/views/pug/profile');
+  });
   // Serialization and deserialization here...
   passport.serializeUser((user, done) => {
     done(null, user._id);
   });
+
   passport.deserializeUser((id, done) => {
     myDataBase.findOne({ _id: new ObjectID(id) }, (err, doc) => {
       done(null, doc);
     });
   });
-  // Be sure to add this...
+
+  passport.use(new LocalStrategy(
+    function(username, password, done) {
+      myDataBase.findOne({ username: username }, function (err, user) {
+        console.log("User " + username + " attemted to log in.");
+        if (err) { return done(err); }
+        if (!user) { return done(null, false); }
+        if (password !== user.password) { return done(null, false); }
+        return done(null, user);
+      });
+    }
+  ));
+
 }).catch((e) => {
   app.route('/').get((req, res) => {
     res.render('pug', { title: e, message: 'Unable to login' });
