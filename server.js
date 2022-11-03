@@ -11,6 +11,7 @@ const LocalStrategy = require('passport-local');
 const app = express();
 app.set('view engine', 'pug');
 
+
 fccTesting(app); // For fCC testing purposes
 app.use('/public', express.static(process.cwd() + '/public'));
 app.use(express.json());
@@ -43,7 +44,8 @@ myDB(async (client) => {
     res.redirect('/profile');
   });
 
-  app.route('/profile').get((req, res) => {
+  app.route('/profile')
+    .get(ensureAuthenticated, (req, res) => {
     res.render(process.cwd() + '/views/pug/profile');
   });
   // Serialization and deserialization here...
@@ -74,7 +76,13 @@ myDB(async (client) => {
     res.render('pug', { title: e, message: 'Unable to login' });
   });
 });
-// app.listen out here...
+
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/');
+}
 
 app.listen(process.env.PORT || 3000, () => {
   console.log('Listening on port ' + process.env.PORT);
